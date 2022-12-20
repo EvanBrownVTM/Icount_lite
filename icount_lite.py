@@ -11,7 +11,7 @@ import numpy as np
 import cv2
 import json
 import pycuda.autoinit  # This is needed for initializing CUDA driver
-import utils_lite.configSrc as cfg
+import configSrc as cfg
 import tensorflow as tf
 import requests
 
@@ -117,7 +117,7 @@ def initializeChannel():
 
 	#Initialize queue for door signal
 	credentials_2 = pika.PlainCredentials('nano','nano')
-	parameters_2 = pika.ConnectionParameters('192.168.1.138', 5672, '/', credentials_2, heartbeat=0, blocked_connection_timeout=3000)
+	parameters_2 = pika.ConnectionParameters(cfg.IP_ADDRESS_NANO, 5672, '/', credentials_2, heartbeat=0, blocked_connection_timeout=3000)
 	connection_2 = pika.BlockingConnection(parameters_2)
 	channel_3 = connection_2.channel()
 	channel_3.queue_declare(queue='cvFace',durable = True)

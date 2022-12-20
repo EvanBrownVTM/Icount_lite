@@ -1,5 +1,6 @@
 IP_ADDRESS_LOCAL="192.168.1.155"
 IP_ADDRESS_PI="192.168.1.65"
+IP_ADDRESS_NANO="192.168.1.116"
 #IP_ADDRESS_PI="localhost"
 base_path = "/home/cvnx/Desktop/Icount_lite/"
 log_path = "/home/cvnx/Desktop/"
