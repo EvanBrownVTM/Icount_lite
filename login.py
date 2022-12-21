@@ -13,8 +13,8 @@ def get_custom_machine_setting(custom_machine_setting, vicki_app):
 			print(e)
 			continue
 
-def get_custom_machine_settings(vicki_app):
-	if get_custom_machine_setting("environment") == "prod":
+def get_custom_machine_settings(vicki_app, logger):
+	if get_custom_machine_setting("environment", vicki_app) == "prod":
 		base_url = get_custom_machine_setting("PROD_URL", vicki_app)
 		logger.info('MACHINE ENVIRONMENT: PROD')
 	else:
@@ -66,13 +66,18 @@ def generate_access_token(base_url, machine_id, machine_token, machine_api_key, 
 
 #check if access token was generated within last 12 hours, otherwise regenerate
 def get_current_access_token(base_url, machine_id, machine_token, machine_api_key, logger):
-	logger.info('Attempting to retrieve a stored ACCESS TOKEN')   
+	logger.info('Looking for a stored ACCESS TOKEN...')   
 	if not os.path.exists('access_token.txt'):
-		logger.info('stored ACCESS TOKEN not found')
-	generate_access_token(logger)
+		logger.info('   Failed: stored ACCESS TOKEN not found')
+		generate_access_token(base_url, machine_id, machine_token, machine_api_key, logger)
+	else:
+		logger.info('   Success: stored ACCESS TOKEN found')
 	access_token, timestamp = read_access_token()
+	logger.info('Checking ACCESS TOKEN timestamp...')
 	if (datetime.datetime.now() - timestamp).total_seconds() / (60 * 60) > 12:
-		logger.info('ACCESS TOKEN out of date')
-	generate_access_token(logger)
-	access_token, timestamp = read_access_token()
+		logger.info('   Failed: ACCESS TOKEN out of date')
+		generate_access_token(base_url, machine_id, machine_token, machine_api_key, logger)
+		access_token, timestamp = read_access_token()
+	else:
+		logger.info('   Success: ACCESS TOKEN up to date')
 	return access_token

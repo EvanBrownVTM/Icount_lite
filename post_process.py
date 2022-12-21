@@ -361,8 +361,8 @@ def postprocess(transid, base_url, headers, cv_activities, ls_activities):
 
 def main():
 	try:
-		base_url, machine_id, machine_token, machine_api_key = login.get_custom_machine_settings(vicki_app)
-		access_token = login.get_current_access_token(machine_id, machine_token, machine_api_key, logger)
+		base_url, machine_id, machine_token, machine_api_key = login.get_custom_machine_settings(vicki_app, logger)
+		access_token = login.get_current_access_token(base_url, machine_id, machine_token, machine_api_key, logger)
 		headers = {"Authorization": "Bearer {}".format(access_token)}
 
 		credentials = pika.PlainCredentials('nano','nano')
