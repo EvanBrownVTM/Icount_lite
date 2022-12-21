@@ -1,4 +1,10 @@
 # Icount_lite
+SETUP
+1) cd plugins && sudo make clean && make
+2) mkdir archive
+3) download yolov4-416-tiny.trt in yolo folder
+4) create configSrc.py from template below and adjust IPs and camera serial #'s 
+
 configSrc.py example:
 
 IP_ADDRESS_LOCAL="192.168.1.155"
