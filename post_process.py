@@ -21,7 +21,8 @@ import requests
 import moviepy.video.io.ImageSequenceClip
 from datetime import datetime
 from scipy.optimize import linear_sum_assignment
-
+import login
+import pickle
 
 logging.getLogger("pika").setLevel(logging.WARNING)
 logging.getLogger('requests').setLevel(logging.WARNING)
@@ -56,25 +57,6 @@ def get_custom_machine_setting(custom_machine_setting):
 
 		except Exception as e:
 			continue
-
-def login_as_machine(url, id, token, api_key):
-        try:
-                headers = {"Content-Type": "application/json",
-                                   "grant_type": "client_credentials",
-                                   "apikey": api_key,
-                                   "machine_token": token}
-                response = requests.post("{}/loyalty/machines/{}/login".format(url, id), headers=headers)
-                if response.status_code is 200:
-                        logger.info("Login successuful")
-                        return response.json()['access_token']
-                else:
-                        logger.info("Login fail")
-                        logger.info(response)
-                        return -1
-        except Exception as e:
-                logger.info("Error logging in as machine.")
-                return -1
-
 
 def make_archive(source, destination, format='zip'):
 	base, name = os.path.split(destination)
@@ -388,22 +370,8 @@ def postprocess(transid, base_url, headers, cv_activities, ls_activities):
 
 def main():
 	try:
-
-		if get_custom_machine_setting("environment") == "prod":
-			base_url = get_custom_machine_setting("PROD_URL")
-			logger.info('MACHINE ENVIRONMENT: PROD')
-		else:
-			base_url = get_custom_machine_setting("TEST_URL")
-			logger.info('MACHINE ENVIRONMENT: DEV')
-
-		logger.info("Fetching MACHINE ID...")
-		machine_id = get_custom_machine_setting("machine_id")
-		logger.info("Fetching MACHINE TOKEN...")
-		machine_token = get_custom_machine_setting("machine_token")
-		logger.info("Fetching MACHINE API Key...")
-		machine_api_key = get_custom_machine_setting("machineAPIKey")
-		logger.info("Logging into the MACHINE...")
-		access_token = login_as_machine(base_url, machine_id, machine_token, machine_api_key)
+		base_url, machine_id, machine_token, machine_api_key = login.get_custom_machine_settings(vicki_app)
+		access_token = login.get_current_access_token(machine_id, machine_token, machine_api_key, logger)
 		headers = {"Authorization": "Bearer {}".format(access_token)}
 
 		credentials = pika.PlainCredentials('nano','nano')
@@ -444,4 +412,3 @@ def main():
 
 if __name__ == "__main__":
 	main()
-
