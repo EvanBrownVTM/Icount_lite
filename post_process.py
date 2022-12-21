@@ -49,15 +49,6 @@ for prod in prod_json:
 #print(name2id)
 #name2id = {"Peanut MMs":"b9d644d0-40d4-4d65-82a0-c94d474f13b3", "Sour Patch Kids": "1fef14b0-f36e-4ed1-9686-90e099183829"}
 
-def get_custom_machine_setting(custom_machine_setting):
-	while True:
-		try:
-			ret = requests.post(url=vicki_app, data="[\"FetchCustomMachineSetting\", \"{}\"]".format(custom_machine_setting)).json()["value"]
-			return ret
-
-		except Exception as e:
-			continue
-
 def make_archive(source, destination, format='zip'):
 	base, name = os.path.split(destination)
 	archive_from = os.path.dirname(source)

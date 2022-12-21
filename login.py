@@ -15,17 +15,17 @@ def get_custom_machine_setting(custom_machine_setting, vicki_app):
 
 def get_custom_machine_settings(vicki_app):
 	if get_custom_machine_setting("environment") == "prod":
-		base_url = get_custom_machine_setting("PROD_URL")
+		base_url = get_custom_machine_setting("PROD_URL", vicki_app)
 		logger.info('MACHINE ENVIRONMENT: PROD')
 	else:
-		base_url = get_custom_machine_setting("TEST_URL")
+		base_url = get_custom_machine_setting("TEST_URL", vicki_app)
 		logger.info('MACHINE ENVIRONMENT: DEV')
 	logger.info("Fetching MACHINE ID...")
-	machine_id = get_custom_machine_setting("machine_id")
+	machine_id = get_custom_machine_setting("machine_id", vicki_app)
 	logger.info("Fetching MACHINE TOKEN...")
-	machine_token = get_custom_machine_setting("machine_token")
+	machine_token = get_custom_machine_setting("machine_token", vicki_app)
 	logger.info("Fetching MACHINE API Key...")
-	machine_api_key = get_custom_machine_setting("machineAPIKey")
+	machine_api_key = get_custom_machine_setting("machineAPIKey", vicki_app)
 	logger.info("Logging into the MACHINE...")
 	return base_url, machine_id, machine_token, machine_api_key
 
