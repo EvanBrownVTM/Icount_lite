@@ -8,3 +8,5 @@
 archive/
 post_archive/
 */__pycache__/
+access_token.txt
+configSrc.py
