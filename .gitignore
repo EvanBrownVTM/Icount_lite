@@ -1,0 +1,10 @@
+*.so
+*.pyc
+*.trt
+*.onnx
+*.weights
+*.jpg
+*.swp
+archive/
+post_archive/
+*/__pycache__/
