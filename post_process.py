@@ -362,8 +362,6 @@ def postprocess(transid, base_url, headers, cv_activities, ls_activities):
 def main():
 	try:
 		base_url, machine_id, machine_token, machine_api_key = login.get_custom_machine_settings(vicki_app, logger)
-		access_token = login.get_current_access_token(base_url, machine_id, machine_token, machine_api_key, logger)
-		headers = {"Authorization": "Bearer {}".format(access_token)}
 
 		credentials = pika.PlainCredentials('nano','nano')
 		parameters = pika.ConnectionParameters('localhost', 5672, '/', credentials, blocked_connection_timeout=3000)
@@ -389,6 +387,8 @@ def main():
 
 				logger.info("")
 				logger.info("   Received: " + transid)
+				access_token = login.get_current_access_token(base_url, machine_id, machine_token, machine_api_key, logger)
+				headers = {"Authorization": "Bearer {}".format(access_token)}
 				postprocess(transid, base_url, headers, cv_activities, ls_activities)
 
 				logger.info("     LS log info: Start")
