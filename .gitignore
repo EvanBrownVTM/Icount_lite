@@ -10,3 +10,4 @@ post_archive/
 */__pycache__/
 access_token.txt
 configSrc.py
+plugins/yolo_layer.o
