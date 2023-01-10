@@ -113,12 +113,12 @@ def initializeChannel():
 	parameters = pika.ConnectionParameters('localhost', 5672, '/', credentials, heartbeat=0, blocked_connection_timeout=3000)
 	connection = pika.BlockingConnection(parameters)
 	channel = connection.channel()
-	channel.queue_declare(queue='cvRequest',durable = True)
+	channel.queue_declare(queue='cvIcount',durable = True)
 	channel2 = connection.channel()
 	channel2.queue_declare(queue='cvPost',durable = True)
 
 	#Clear queue for pre-existing messages 
-	channel.queue_purge(queue='cvRequest')
+	channel.queue_purge(queue='cvIcount')
 	channel2.queue_purge(queue='cvPost')
 	
 	logger.info("Rabbitmq connections initialized ")
@@ -430,7 +430,7 @@ else:
 cv_activities=[]
 while True:
 	if pika_flag:
-		_,_,recv = channel.basic_get('cvRequest')
+		_,_,recv = channel.basic_get('cvIcount')
 		if recv != None:
 			#print(recv)
 			recv = str(recv,'utf-8')
@@ -440,7 +440,7 @@ while True:
 			if recv["cmd"] == 'DoorOpened':
 				transid = recv["parm1"].split(":")[0]
 				door_info = recv["parm1"].split(":")[1]
-				logger.info("   RECV: {} / cvRequest".format(recv["cmd"]))
+				logger.info("   RECV: {} / cvIcount".format(recv["cmd"]))
 				logger.info("      TRANSID: {}".format(transid))
 				door_state = "DoorOpened"
 				duration_time = 0
@@ -474,7 +474,7 @@ while True:
 				
 			elif recv["cmd"] == 'DoorLocked':
 				transid = recv["parm1"]
-				logger.info("   RECV: {} / cvRequest".format(recv["cmd"]))
+				logger.info("   RECV: {} / cvIcount".format(recv["cmd"]))
 				logger.info("      TRANSID: {}".format(transid))
 				door_state = "DoorLocked"
 				if grabbing_status == 1:
