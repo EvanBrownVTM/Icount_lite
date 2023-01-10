@@ -1,14 +1,17 @@
 import time
 import configSrc as cfg
 import logging
+import pika
+import sys
+import json
 
 #RabbitMQ Initialization
-def initializeChannels(queue_list, ip, credentials = pika.PlainCredentials('nano','nano')):
+def initializeChannels(logger, queue_list, ip, credentials = pika.PlainCredentials('nano','nano')):
 	'''
 		queue_list = ['cvRequest', 'cvPost']
 		ip = 'localhost'
 	'''
-	logger.info('Attempting to initialize RabbitMQ queues: ' + queue_list.join(' ') + ' at address: ' + ip)
+	logger.info('Attempting to initialize RabbitMQ queues: ' + ' '.join(queue_list) + ' at address: ' + ip)
 	credentials = pika.PlainCredentials('nano','nano')
 	parameters = pika.ConnectionParameters(ip, 5672, '/', credentials, heartbeat=0, blocked_connection_timeout=3000)
 	connection = pika.BlockingConnection(parameters)
@@ -35,49 +38,49 @@ def main():
 	sys.stderr.write=logger.error
 
 	#initialize channel to receive door signal
-	channels, connection = initializeChannels(['cvRequest'], 'localhost')
+	channels, connection = initializeChannels(logger, ['cvRequest'], 'localhost')
 	(channel_receive,) = channels
 
 	#initialize channel to forward door signal to icount (local/xavier)
-	channels, connection = initializeChannels(['cvIcount'], 'localhost')
+	channels, connection = initializeChannels(logger, ['cvIcount'], 'localhost')
 	(channel_icount,) = channels
 
 	#initialize channel to forward door signal to demographics (nano)
 	channel_demographics = None
 	start_time = time.time()
 	try:
-		channels, connection = initializeChannels(['cvFace'], cfg.IP_ADDRESS_NANO)
+		channels, connection = initializeChannels(logger, ['cvFace'], cfg.IP_ADDRESS_NANO)
 		(channel_demographics,) = channels
 	except Exception as e:
 		logger.info('ERROR: failed to initialize RabbitMQ channel for door signal forwarding to Nano at: ' + cfg.IP_ADDRESS_NANO)
-		logger.info('   ' + e)
+		logger.info('   ' + str(e))
 
 	#receive and forward signals
 	while True:
 		#receive door signal
 		_,_,recv = channel_receive.basic_get('cvRequest')
+		if recv:
+			#forward message to icount
+			recv = str(recv,'utf-8')
+			recv =json.loads(recv)
+			channel_icount.basic_publish(exchange='',
+										routing_key="cvIcount",
+										body=recv
+										)
 
-		#forward message to icount
-		recv = str(recv,'utf-8')
-		recv =json.loads(recv)
-		channel_icount.basic_publish(exchange='',
-									routing_key="cvIcount",
-									body=recv
-									)
-
-		#forward message to demographics, if channel exists
-		if channel_demographics is not None:
-			channel_demographics.basic_publish( exchange='',
-												routing_key="cvFace",
-												body=recv
-												)
-		elif (time.time - start_time) % reconnect_interval == 0:
-			try:
-				channels, connection = initializeChannels(['cvFace'], cfg.IP_ADDRESS_NANO)
-				(channel_demographics,) = channels
-			except Exception as e:
-				logger.info('ERROR: failed to initialize RabbitMQ channel for door signal forwarding to Nano at: ' + cfg.IP_ADDRESS_NANO)
-				logger.info('   ' + e)
+			#forward message to demographics, if channel exists
+			if channel_demographics is not None:
+				channel_demographics.basic_publish( exchange='',
+													routing_key="cvFace",
+													body=recv
+													)
+			elif (time.time - start_time) % reconnect_interval == 0:
+				try:
+					channels, connection = initializeChannels(logger, ['cvFace'], cfg.IP_ADDRESS_NANO)
+					(channel_demographics,) = channels
+				except Exception as e:
+					logger.info('ERROR: failed to initialize RabbitMQ channel for door signal forwarding to Nano at: ' + cfg.IP_ADDRESS_NANO)
+					logger.info('   ' + str(e))
 
 if __name__ == '__main__':
 	main()
