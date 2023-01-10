@@ -114,26 +114,15 @@ def initializeChannel():
 	connection = pika.BlockingConnection(parameters)
 	channel = connection.channel()
 	channel.queue_declare(queue='cvRequest',durable = True)
-
-	#Initialize queue for door signal
-	credentials_2 = pika.PlainCredentials('nano','nano')
-	parameters_2 = pika.ConnectionParameters(cfg.IP_ADDRESS_NANO, 5672, '/', credentials_2, heartbeat=0, blocked_connection_timeout=3000)
-	connection_2 = pika.BlockingConnection(parameters_2)
-	channel_3 = connection_2.channel()
-	channel_3.queue_declare(queue='cvFace',durable = True)
-
-
-	
 	channel2 = connection.channel()
 	channel2.queue_declare(queue='cvPost',durable = True)
 
 	#Clear queue for pre-existing messages 
 	channel.queue_purge(queue='cvRequest')
 	channel2.queue_purge(queue='cvPost')
-	channel_3.queue_purge(queue='cvFace')
 	
 	logger.info("Rabbitmq connections initialized ")
-	return channel, channel2, channel_3, connection, connection_2
+	return channel, channel2, connection
 
 
 def trt_detect(frame, trt_yolo, conf_th, vis):
@@ -404,7 +393,7 @@ def img2jpeg(image):
 	return byte_im
 
 if pika_flag:
-	channel, channel2, channel_3, connection, connection_2  = initializeChannel()
+	channel, channel2, connection  = initializeChannel()
 
 
 avt0 = AVT()
@@ -442,11 +431,6 @@ cv_activities=[]
 while True:
 	if pika_flag:
 		_,_,recv = channel.basic_get('cvRequest')
-		#channel_3.basic_publish(exchange='',
-		#	routing_key="cvFace",
-		#	body='{{\n "cmd":"{}", \n "parm1":"{}", \n "door_info":"{}"\n}}'.format("None", transid, "TEST")
-		#	)
-
 		if recv != None:
 			#print(recv)
 			recv = str(recv,'utf-8')
@@ -479,13 +463,6 @@ while True:
 				
 				cv_activities = []
 				ls_activities = []
-
-
-				#forward message to nano
-				channel_3.basic_publish(exchange='',
-                                	                routing_key="cvFace",
-                                        	        body='{{\n "cmd":"{}", \n "parm1":"{}", \n "door_info":"{}"\n}}'.format("DoorOpened", transid, "TEST")
-							)
 
 				if grabbing_status == 0 and door_info == 'True':
 					cameras.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
@@ -526,15 +503,7 @@ while True:
 				cameras.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
 				continue
 				
-			cameraContextValue = grabResult.GetCameraContext()
-			
-			#if cameraContextValue == 0:
-			#	frame_cnt0 += 1
-			#if cameraContextValue == 1:
-			#	frame_cnt1 += 1
-			#else:
-			#	frame_cnt2 += 1
-				
+			cameraContextValue = grabResult.GetCameraContext()				
 				
 			if grabResult.GrabSucceeded():
 				if cameraContextValue == 0:
