@@ -60,9 +60,8 @@ def main():
 		#receive door signal
 		_,_,recv = channel_receive.basic_get('cvRequest')
 		if recv:
+			logger.info(str(recv, 'utf-8'))
 			#forward message to icount
-			recv = str(recv,'utf-8')
-			recv =json.loads(recv)
 			channel_icount.basic_publish(exchange='',
 										routing_key="cvIcount",
 										body=recv
@@ -74,7 +73,7 @@ def main():
 													routing_key="cvFace",
 													body=recv
 													)
-			elif (time.time - start_time) % reconnect_interval == 0:
+			elif (time.time() - start_time) % reconnect_interval == 0:
 				try:
 					channels, connection = initializeChannels(logger, ['cvFace'], cfg.IP_ADDRESS_NANO)
 					(channel_demographics,) = channels

@@ -490,6 +490,9 @@ while True:
 			elif recv["cmd"] == "ActivityID":
 				ls_activities = recv["parm1"]
 				act_flag = 1
+			else:
+				logger.info("      {}".format(recv["cmd"]))
+
 	if door_state == "DoorOpened":
 		clear_flag = 1
 		if cameras.IsGrabbing():
@@ -552,7 +555,7 @@ while True:
 					
 					if init_process == True:
 						if not os.path.exists("{}archive/{}".format(cfg.base_path, transid)):
-							os.mkdir("{}archive/{}".format(cfg.base_path, transid))
+							os.makedirs("{}archive/{}".format(cfg.base_path, transid))
 						writer0 = tf.python_io.TFRecordWriter("{}archive/{}/img_0.tfrecords".format(cfg.base_path, transid))
 						writer1 = tf.python_io.TFRecordWriter("{}archive/{}/img_1.tfrecords".format(cfg.base_path, transid))
 						writer2 = tf.python_io.TFRecordWriter("{}archive/{}/img_2.tfrecords".format(cfg.base_path, transid))
