@@ -34,7 +34,7 @@ SensorShutterMode	Global
 OverlapMode	On
 BslImmediateTriggerMode	Off
 ExposureTimeRaw	7847
-ExposureAuto	Off
+ExposureAuto	Once
 AutoExposureTimeLowerLimitRaw	10
 AutoExposureTimeUpperLimitRaw	100000
 TriggerSelector	FrameStart

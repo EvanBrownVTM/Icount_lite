@@ -1,8 +1,5 @@
 import os
 import sys
-sys.path.append("/usr/lib/python3.6/site-packages/")
-sys.path.append("/usr/local/cuda-10.2/bin")
-sys.path.append("/usr/local/cuda-10.2/lib64")
 import time
 import logging
 import pika
@@ -30,7 +27,7 @@ from scipy.optimize import linear_sum_assignment
 logging.getLogger("pika").setLevel(logging.WARNING)
 logging.getLogger('requests').setLevel(logging.WARNING)
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
-logging.basicConfig(filename='/home/cvnx/Desktop/logs/Icount.log', level=logging.DEBUG, format="%(asctime)-8s %(levelname)-8s %(message)s")
+logging.basicConfig(filename=cfg.log_path, level=logging.DEBUG, format="%(asctime)-8s %(levelname)-8s %(message)s")
 logging.disable(logging.DEBUG)
 logger=logging.getLogger()
 logger.info("")
@@ -38,21 +35,24 @@ sys.stderr.write=logger.error
 
 init_process = True
 timestamp_format = "%Y%m%d-%H_%M_%S"
-archive_flag = True
+archive_flag = cfg.archive_flag
 fps = 0.0
 conf_th = 0.7
 maxCamerasToUse = 3
-archive_size = 416
+frame_size = 416
 cls_dict = cfg.cls_dict
-l_mask = np.load('utils_lite/lowest_shelf_mask.npy')
-l_mask = np.int32(l_mask * archive_size)
+l_mask = np.load('contours/lowest_shelf_mask.npy')
+l_mask = np.int32(l_mask * frame_size)
 save_size = 200
-display_mode = False
+display_mode = cfg.display_mode
 pika_flag = True
 tsv_url = 'http://192.168.1.140:8085/tsv/flashapi'
 
 
-
+def draw_contours(img, contours, frame_size):
+							for zone in contours.files:
+								absolute_zone = np.int32(contours[zone] * frame_size) #denormalize the contour
+								cv2.drawContours(img, absolute_zone, -1, (0,0,255), 2)
 def init():
 	logger.info('Loading TensoRT model...')
 	# build the class (index/name) dictionary from labelmap file
@@ -78,12 +78,12 @@ def initializeCamera(serial_number_list):
 	if curr_time.tm_hour >= 16 or curr_time.tm_hour < 6:
 		#Night mode
 		logger.info("Operating mode: Night")
-		pfs_list = ['pfs/ic_out_front_night_v1.pfs', 'pfs/ic_side_cam2_night_v1.pfs', 'pfs/ic_side_cam2_night_v1.pfs']
+		pfs_list = ['pfs/ic_out_front.pfs', 'pfs/ic_side.pfs', 'pfs/ic_side_cam2.pfs']
 		#pfs_list = ['ic_out_front_day.pfs', 'ic_side_cam2_day.pfs', 'ic_side_cam2_day.pfs']
 	else:
 		#Morning mode
 		logger.info("Operating mode: Day")
-		pfs_list = ['pfs/ic_out_front_day_v1.pfs', 'pfs/ic_side_cam2_day_v1.pfs', 'pfs/ic_side_cam2_day_v1.pfs']
+		pfs_list = ['pfs/ic_out_front.pfs', 'pfs/ic_side.pfs', 'pfs/ic_side_cam2.pfs']
 		#pfs_list = ['ic_out_front_night.pfs', 'ic_side_cam2_night.pfs', 'ic_side_cam2_night.pfs']
 	tlFactory = pylon.TlFactory.GetInstance()
 
@@ -109,7 +109,7 @@ def initializeCamera(serial_number_list):
 #RabbitMQ Initialization
 def initializeChannel():
 	#Initialize queue for door signal
-	credentials = pika.PlainCredentials('nano','nano')
+	credentials = pika.PlainCredentials(cfg.pika_name,cfg.pika_name)
 	parameters = pika.ConnectionParameters('localhost', 5672, '/', credentials, heartbeat=0, blocked_connection_timeout=3000)
 	connection = pika.BlockingConnection(parameters)
 	channel = connection.channel()
@@ -194,21 +194,21 @@ def infer_engine(timestr, frame0, frame1, frame2, frame_cnt0, frame_cnt1, frame_
 	det_frame2, clss2, new_boxes2, confs2 = trt_detect(frame2, trt_yolo, conf_th, vis)
 	
 	file2info = {}
-	file2info['bboxes'] = np.asarray(np.asarray(new_boxes0, dtype=np.int32) / archive_size * save_size, dtype = np.int32).tolist()
+	file2info['bboxes'] = np.asarray(np.asarray(new_boxes0, dtype=np.int32) / frame_size * save_size, dtype = np.int32).tolist()
 	file2info['classes'] = np.asarray(clss0, dtype = np.int32).tolist()
 	file2info['scores'] = np.asarray(confs0).tolist()
 	if not os.path.exists("{}archive/{}/cam0/prod".format(cfg.base_path, transid)):
 		os.makedirs("{}archive/{}/cam0/prod".format(cfg.base_path, transid))
 		
 	file2info1 = {}
-	file2info1['bboxes'] = np.asarray(np.asarray(new_boxes1, dtype=np.int32) / archive_size * save_size, dtype = np.int32).tolist()
+	file2info1['bboxes'] = np.asarray(np.asarray(new_boxes1, dtype=np.int32) / frame_size * save_size, dtype = np.int32).tolist()
 	file2info1['classes'] = np.asarray(clss1, dtype = np.int32).tolist()
 	file2info1['scores'] = np.asarray(confs1).tolist()
 	if not os.path.exists("{}archive/{}/cam1/prod".format(cfg.base_path, transid)):
 		os.makedirs("{}archive/{}/cam1/prod".format(cfg.base_path, transid))
 		
 	file2info2 = {}
-	file2info2['bboxes'] = np.asarray(np.asarray(new_boxes2, dtype=np.int32) / archive_size * save_size, dtype = np.int32).tolist()
+	file2info2['bboxes'] = np.asarray(np.asarray(new_boxes2, dtype=np.int32) / frame_size * save_size, dtype = np.int32).tolist()
 	file2info2['classes'] = np.asarray(clss2, dtype = np.int32).tolist()
 	file2info2['scores'] = np.asarray(confs2).tolist()
 	if not os.path.exists("{}archive/{}/cam2/prod".format(cfg.base_path, transid)):
@@ -403,11 +403,11 @@ avt2 = AVT()
 trt_yolo = init() 
 vis = BBoxVisualization(cls_dict)
 
-cam0_solver = FrontCam('cam0', 'utils_lite/new_zones_cam0.npz')
-cam1_solver = SideCam('cam1', 'utils_lite/zones_contours_updated_v3.npz')
-cam2_solver = SideCam('cam2', 'utils_lite/zones2_contours_v6.npz')
+cam0_solver = FrontCam('cam0', cfg.contours[0])
+cam1_solver = SideCam('cam1', cfg.contours[1])
+cam2_solver = SideCam('cam2', cfg.contours[2])
 
-
+contours = [np.load(contour_path, allow_pickle=True) for contour_path in cfg.contours]
 tic = time.time()
 
 cameras, dev_len = initializeCamera([cfg.camera_map["cam0"], cfg.camera_map["cam1"], cfg.camera_map["cam2"]])
@@ -511,22 +511,23 @@ while True:
 			if grabResult.GrabSucceeded():
 				if cameraContextValue == 0:
 					frame_cnt0 += 1
-					frame0 = cv2.resize(np.uint8(grabResult.Array), (archive_size, archive_size))
+					frame0 = cv2.resize(np.uint8(grabResult.Array), (frame_size, frame_size))
 					check_list[0] = True
 					if archive_flag:
 						data = {
 							  'bytes': _bytes_feature(value = img2jpeg(cv2.resize(frame0, (save_size, save_size)))), 
 							  'timestamp': _bytes_feature(value = time.strftime(timestamp_format).encode('utf-8'))
 							}
+
 				elif cameraContextValue == 1:
 					frame_cnt1 += 1
-					frame1 = cv2.resize(np.uint8(grabResult.Array), (archive_size, archive_size))
-					frame1 = cv2.rotate(frame1, cv2.ROTATE_90_CLOCKWISE)
-					#height, width = archive_size, int(archive_size / 1280 * 960)
-					#plot = np.zeros((archive_size, archive_size, 3))
-					#plot[:, (height - width) // 2:(height - width) // 2 + width] = frame1
-					
-					#frame1 = plot
+					frame1 = cv2.resize(np.uint8(grabResult.Array), (frame_size, int(frame_size / 1280 * 960)))
+					frame1 = cv2.rotate(frame1, cv2.ROTATE_90_COUNTERCLOCKWISE)
+					height, width = frame_size, int(frame_size / 1280 * 960)
+					plot = np.zeros((frame_size, frame_size, 3))
+					plot[:, (height - width) // 2:(height - width) // 2 + width] = frame1
+					frame1 = plot.astype(np.uint8)
+
 					check_list[1] = True
 					if archive_flag:
 						data = {
@@ -537,9 +538,13 @@ while True:
 							
 				else:
 					frame_cnt2 += 1
-					frame2 = cv2.resize(np.uint8(grabResult.Array), (archive_size, archive_size))
-					frame2 = cv2.rotate(frame2, cv2.ROTATE_90_CLOCKWISE)
-					#cv2.drawContours(frame2, [l_mask], 0, (0,0,0), -1)
+					frame2 = cv2.resize(np.uint8(grabResult.Array), (frame_size, int(frame_size / 1280 * 960)))
+					frame2 = cv2.rotate(frame2, cv2.ROTATE_90_COUNTERCLOCKWISE)
+					height, width = frame_size, int(frame_size / 1280 * 960)
+					plot = np.zeros((frame_size, frame_size, 3))
+					plot[:, (height - width) // 2:(height - width) // 2 + width] = frame2
+					frame2 = plot.astype(np.uint8)
+
 					check_list[2] = True
 					if archive_flag:
 						data = {
@@ -580,6 +585,9 @@ while True:
 				#matched_pick_cam01, matched_pick_cam02, matched_return_cam01, matched_return_cam02 = fuse_all_cams_activities(matched_pick_cam01, matched_pick_cam02, matched_return_cam01, matched_return_cam02, cv_activities)
 				
 				if display_mode:
+					if cfg.display_mode and cfg.show_contours:
+						for img, c in zip([det_frame0, det_frame1, det_frame2], [contours[0], contours[1], contours[2]]):
+							draw_contours(img, c, frame_size)
 					img_hstack = det_frame0
 					img_hstack = np.hstack((img_hstack, det_frame1))
 					img_hstack = np.hstack((img_hstack, det_frame2))

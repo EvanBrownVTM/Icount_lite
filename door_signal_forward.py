@@ -6,7 +6,7 @@ import sys
 import json
 
 #RabbitMQ Initialization
-def initializeChannels(logger, queue_list, ip, credentials = pika.PlainCredentials('nano','nano')):
+def initializeChannels(logger, queue_list, ip, credentials = pika.PlainCredentials(cfg.pika_name,cfg.pika_name)):
 	'''
 		queue_list = ['cvRequest', 'cvPost']
 		ip = 'localhost'
