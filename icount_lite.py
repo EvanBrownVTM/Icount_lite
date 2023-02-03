@@ -45,6 +45,7 @@ l_mask = np.load('contours/lowest_shelf_mask.npy')
 l_mask = np.int32(l_mask * frame_size)
 save_size = 200
 display_mode = cfg.display_mode
+icount_mode = cfg.icount_mode
 pika_flag = True
 tsv_url = 'http://192.168.1.140:8085/tsv/flashapi'
 
@@ -575,14 +576,16 @@ while True:
 					
 						
 			if all(check_list):
-				timestr = time.strftime(timestamp_format)
 				check_list = np.logical_not(check_list)
-				det_frame0, det_frame1, det_frame2, cart = infer_engine(timestr, frame0, frame1, frame2, frame_cnt0, frame_cnt1, frame_cnt2, cv_activities_cam0, cv_activities_cam1, cv_activities_cam2, cv_pick_cam0, cv_ret_cam0, cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2)
+
+				if icount_mode:
+					timestr = time.strftime(timestamp_format)
+					det_frame0, det_frame1, det_frame2, cart = infer_engine(timestr, frame0, frame1, frame2, frame_cnt0, frame_cnt1, frame_cnt2, cv_activities_cam0, cv_activities_cam1, cv_activities_cam2, cv_pick_cam0, cv_ret_cam0, cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2)
 				
-				#cv_pick_cam0, cv_ret_cam0, cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2 = fuse_cam01_02_activities(cv_pick_cam0, cv_ret_cam0, cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2, \
-				#																									matched_pick_cam01, matched_return_cam01, matched_pick_cam02, matched_return_cam02)
-				#cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2 = fuse_cam12_activities(cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2, cv_activities)
-				#matched_pick_cam01, matched_pick_cam02, matched_return_cam01, matched_return_cam02 = fuse_all_cams_activities(matched_pick_cam01, matched_pick_cam02, matched_return_cam01, matched_return_cam02, cv_activities)
+					#cv_pick_cam0, cv_ret_cam0, cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2 = fuse_cam01_02_activities(cv_pick_cam0, cv_ret_cam0, cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2, \
+					#																									matched_pick_cam01, matched_return_cam01, matched_pick_cam02, matched_return_cam02)
+					#cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2 = fuse_cam12_activities(cv_pick_cam1, cv_ret_cam1, cv_pick_cam2, cv_ret_cam2, cv_activities)
+					#matched_pick_cam01, matched_pick_cam02, matched_return_cam01, matched_return_cam02 = fuse_all_cams_activities(matched_pick_cam01, matched_pick_cam02, matched_return_cam01, matched_return_cam02, cv_activities)
 				
 				if display_mode:
 					if cfg.display_mode and cfg.show_contours:
@@ -621,7 +624,7 @@ while True:
 	elif door_state == "DoorLocked" and act_flag == 1:
 		if len(cv_activities) > 0:
 			cv_activities = sorted(cv_activities, key=lambda d: d['timestamp']) 
-		#print(cv_activities)
+			#print(cv_activities)
 		data = {"cmd": "Done", "transid": transid, "timestamp": time.strftime("%Y%m%d-%H_%M_%S"), "cv_activities": cv_activities, "ls_activities": ls_activities}
 		mess = json.dumps(data)
 		channel2.basic_publish(exchange='',

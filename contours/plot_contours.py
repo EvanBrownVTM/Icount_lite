@@ -51,33 +51,19 @@ cv2.imwrite('test2.jpg', img)
 
 
 
-e = np.load('zones2_contours_v6.npz', allow_pickle=True)
+e = np.load('cam0_Regus_office.npz', allow_pickle=True)
 print(e.files)
 
 
-img = cv2.imread('check_img_resized_cam2.jpg')
-lower_shelf = np.int32(e['lower_shelf'] * 640)
+img = cv2.imread('cam0_Regus_office.jpg')
+lower_shelf = np.int32(e['all_shelves'] * 640)
 #lower_shelf[:,:,0] += 30
 cv2.drawContours(img, [lower_shelf], 0, (0,0,255), 2)
 
-lowest_shelf = np.int32(e['lowest_shelf'] * 640)
-#lowest_shelf[:,:,0] += 30
-cv2.drawContours(img, [lowest_shelf], 0, (0,255,0), 2)
+# lowest_shelf = np.int32(e['lowest_shelf'] * 640)
+# #lowest_shelf[:,:,0] += 30
+# cv2.drawContours(img, [lowest_shelf], 0, (0,255,0), 2)
 
-#np.savez('zones2_contours_v3.npz', lower_shelf = lower_shelf / 640, lowest_shelf = lowest_shelf / 640)
+# #np.savez('zones2_contours_v3.npz', lower_shelf = lower_shelf / 640, lowest_shelf = lowest_shelf / 640)
 
-cv2.imwrite('test4.jpg', img)
-
-
-'''
-e = np.load('contour2_v2.npy')
-t = np.int32(e * 640)
-print(np.shape(t))
-img = cv2.imread('cam2.jpg')
-cv2.drawContours(img, [t], 0, (0,0,255), 2)
-
-cv2.imwrite('cam2_2.jpg', img)
-
-'''
-
-
+# cv2.imwrite('test4.jpg', img)

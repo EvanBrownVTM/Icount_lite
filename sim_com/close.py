@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import pika
 import json
-from .. import configSrc as cfg
+import sys
+sys.path.insert(0, '../')
+import configSrc as cfg
 
 credentials = pika.PlainCredentials(cfg.pika_name,cfg.pika_name)
 parameters = pika.ConnectionParameters('localhost',5672,'/',credentials)
