@@ -94,7 +94,8 @@ def initializeCamera(serial_number_list):
 		raise pylon.RuntimeException("No camera present.")
 
 	# Create an array of instant cameras for the found devices and avoid exceeding a maximum number of devices.
-	cameras = pylon.InstantCameraArray(min(len(devices), maxCamerasToUse))
+	dev_len = min(len(devices), maxCamerasToUse)
+	cameras = pylon.InstantCameraArray(dev_len)
 
 	# Create and attach all Pylon Devices.
 	for i, cam in enumerate(cameras):
@@ -104,7 +105,7 @@ def initializeCamera(serial_number_list):
 		cam.Open()
 		pylon.FeaturePersistence.Load(pfs_list[i], cam.GetNodeMap(), True)		
 		
-	return cameras, len(devices)
+	return cameras, dev_len
 	
 	
 #RabbitMQ Initialization
